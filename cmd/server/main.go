@@ -15,13 +15,14 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	serverv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/masteris777/go-watchfile"
 	log "github.com/sirupsen/logrus"
 	"github.com/stevesloka/envoy-xds-server/internal/processor"
 	"github.com/stevesloka/envoy-xds-server/internal/server"
-	"github.com/stevesloka/envoy-xds-server/internal/watcher"
 )
 
 var (
@@ -46,7 +47,7 @@ func init() {
 	flag.StringVar(&nodeID, "nodeID", "test-id", "Node ID")
 
 	// Define the directory to watch for Envoy configuration files
-	flag.StringVar(&watchDirectoryFileName, "watchDirectoryFileName", "config/config.yaml", "full path to directory to watch for files")
+	flag.StringVar(&watchDirectoryFileName, "watchDirectoryFileName", "./config/config.yaml", "full path to directory to watch for files")
 }
 
 func main() {
@@ -60,18 +61,7 @@ func main() {
 		cache, nodeID, log.WithField("context", "processor"))
 
 	// Create initial snapshot from file
-	proc.ProcessFile(watcher.NotifyMessage{
-		Operation: watcher.Create,
-		FilePath:  watchDirectoryFileName,
-	})
-
-	// Notify channel for file system events
-	notifyCh := make(chan watcher.NotifyMessage)
-
-	go func() {
-		// Watch for file changes
-		watcher.Watch(watchDirectoryFileName, notifyCh)
-	}()
+	proc.ProcessFile(watchDirectoryFileName)
 
 	go func() {
 		// Run the xDS server
@@ -80,10 +70,17 @@ func main() {
 		server.RunServer(ctx, srv, port)
 	}()
 
+	// Start tracking file changes
+	fileChangeNotification, fileCheckError := watchfile.Notify(watchDirectoryFileName);
+
 	for {
 		select {
-		case msg := <-notifyCh:
-			proc.ProcessFile(msg)
+			case err := <- fileCheckError:
+				fmt.Println(err)
+			case <- fileChangeNotification:
+				log.Printf("Configuration file has been updated")
+				proc.ProcessFile(watchDirectoryFileName)
 		}
 	}
+
 }

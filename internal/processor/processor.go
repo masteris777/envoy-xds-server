@@ -26,7 +26,6 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/sirupsen/logrus"
-	"github.com/stevesloka/envoy-xds-server/internal/watcher"
 )
 
 type Processor struct {
@@ -71,10 +70,10 @@ func (p *Processor) newSnapshotVersion() string {
 }
 
 // ProcessFile takes a file and generates an xDS snapshot
-func (p *Processor) ProcessFile(file watcher.NotifyMessage) {
+func (p *Processor) ProcessFile(file string) {
 
 	// Parse file into object
-	envoyConfig, err := parseYaml(file.FilePath)
+	envoyConfig, err := parseYaml(file)
 	if err != nil {
 		p.Errorf("error parsing yaml file: %+v", err)
 		return

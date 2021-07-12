@@ -2,6 +2,18 @@
 
 This is a sample repo which demonstrates how to spin up an xDS Server for Envoy Proxy. 
 
+## Run the xDS server
+
+```bash
+go run ./cmd/server/main.go
+```
+
+## Run Envoy localy
+
+```bash
+envoy -c hack/boot.yaml
+```
+
 ## Sample Apps
 
 Run some sample apps in docker to give some endpoints to route to:
