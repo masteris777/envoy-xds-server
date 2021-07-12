@@ -71,15 +71,15 @@ func main() {
 	}()
 
 	// Start tracking file changes
-	fileChangeNotification, fileCheckError := watchfile.Notify(watchDirectoryFileName);
+	fileChangeNotification, fileCheckError := watchfile.Notify(watchDirectoryFileName)
 
 	for {
 		select {
-			case err := <- fileCheckError:
-				fmt.Println(err)
-			case <- fileChangeNotification:
-				log.Printf("Configuration file has been updated")
-				proc.ProcessFile(watchDirectoryFileName)
+		case err := <-fileCheckError:
+			fmt.Println(err)
+		case <-fileChangeNotification:
+			log.Printf("Configuration file has been updated")
+			proc.ProcessFile(watchDirectoryFileName)
 		}
 	}
 
